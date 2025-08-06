@@ -123,10 +123,9 @@ class SliderCaptchaMiddleware:
         self.driver = webdriver.Chrome(options=chrome_options,service=service)
 
     def process_response(self, request, response, spider):
-        # 判断是否是滑块验证页面（通过 URL 或内容）
         if "check.3g.fang.com" in response.url or "拖动滑块验证" in response.text:
             try:
-                # 1. 注入爬虫的 Cookie（保持会话一致）
+                # 注入爬虫的 Cookie（保持会话一致）
                 self.driver.delete_all_cookies()  # 清空原有 Cookie
                 for k, v in request.cookies.items():
                     self.driver.add_cookie({
@@ -135,28 +134,23 @@ class SliderCaptchaMiddleware:
                         "domain": ".fang.com"  # 注意域名，需覆盖子域名
                     })
 
-                # 2. 重新加载验证页面（携带爬虫的 Cookie）
+                # 重新加载验证页面（携带爬虫的 Cookie）
                 self.driver.get(response.url)
-                time.sleep(3)  # 等待页面加载
+                time.sleep(3)  
 
-                # 3. 定位滑块和容器（需根据实际页面调整选择器！）
-                # 示例选择器（需替换为真实页面的 CSS 选择器）：
+                
                 slider = self.driver.find_element(By.CSS_SELECTOR, ".handler.handler_bg")  # 滑块
                 container = self.driver.find_element(By.CSS_SELECTOR,".drag_text")  # 滑块容器
 
-                # 4. 模拟滑块拖动（带随机轨迹，避免被识别为机器）
                 action = ActionChains(self.driver)
                 action.click_and_hold(slider).perform()  # 按住滑块
 
-                # 计算拖动距离（示例：假设容器宽度为缺口位置，实际需更精确计算！）
-                # 真实场景需通过图片对比找缺口，此处简化为容器宽度的 80%
                 container_width = int(container.value_of_css_property("width").replace("px", ""))  # 300
                 distance = container_width  # 需拖动300px（从left:0到left:300）
 
-                # 模拟人类拖动：分段随机移动
-                action.click_and_hold(slider).perform()  # 按住滑块
-                action.move_by_offset(distance, 0).perform()  # 一次性移动到目标位置
-                time.sleep(random.uniform(0.05, 0.1))  # 拖动后短暂停顿再释放，更自然
+                action.click_and_hold(slider).perform()
+                action.move_by_offset(distance, 0).perform()
+                time.sleep(random.uniform(0.05, 0.1))
 
 
                 action.release().perform()  # 释放滑块
@@ -171,7 +165,8 @@ class SliderCaptchaMiddleware:
 
                 # 更新请求的Cookie，确保后续请求携带验证状态
                 request.cookies.update(cookie_dict)
-                # 5. 将验证后的页面转为 Scrapy 响应
+                
+                #将验证后的页面转为 Scrapy 响应
                 new_body = self.driver.page_source.encode("utf-8")
                 new_response = HtmlResponse(
                     url=self.driver.current_url,
@@ -183,7 +178,7 @@ class SliderCaptchaMiddleware:
 
             except Exception as e:
                 spider.logger.error(f"滑块验证失败: {e}")
-                # 验证失败，可选择重试（抛出异常让 Scrapy 重试）
+                # 验证失败，抛出异常
                 raise e
             finally:
                 self.driver.delete_all_cookies()  # 清理 Cookie，避免干扰后续请求
@@ -192,5 +187,4 @@ class SliderCaptchaMiddleware:
 
 
     def close(self, spider):
-        # 关闭浏览器（爬虫关闭时触发）
         self.driver.quit()
