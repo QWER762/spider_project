@@ -7,35 +7,30 @@ import random
 import os
 from datetime import datetime
 
-# 导入可视化库
+
 import matplotlib.pyplot as plt
 
-# 设置中文字体
-plt.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
-plt.rcParams['axes.unicode_minus'] = False  # 用来正常显示负号
 
-# 价格转换函数：将各种格式的价格转换为万元单位的数值
+plt.rcParams['font.sans-serif'] = ['SimHei'] 
+plt.rcParams['axes.unicode_minus'] = False
+
 def parse_price_to_wan(price_str):
     if pd.isna(price_str) or price_str == '':
         return np.nan
     
-    # 尝试直接转换为浮点数
     try:
         if isinstance(price_str, (int, float)):
             return float(price_str)
     except:
         pass
     
-    # 处理字符串格式
     if isinstance(price_str, str):
-        # 提取数字部分
         num_match = re.search(r'([\d\.]+)', price_str)
         if not num_match:
             return np.nan
         
         value = float(num_match.group(1))
         
-        # 根据单位转换为万元
         if '万' in price_str:
             return value
         elif '亿' in price_str:
@@ -43,25 +38,21 @@ def parse_price_to_wan(price_str):
         elif '元' in price_str:
             return value / 10000
         else:
-            return value  # 假设默认单位为万元
+            return value 
     
     return np.nan
 
-# 提取年份函数
 def parse_year(year_str):
     if pd.isna(year_str) or year_str == '':
         return np.nan
     
-    # 处理数字格式
     try:
         if isinstance(year_str, (int, float)):
             return int(year_str)
     except:
         pass
     
-    # 处理字符串格式
     if isinstance(year_str, str):
-        # 尝试提取年份
         year_match = re.search(r'(\d{4})', year_str)
         if year_match:
             year = int(year_match.group(1))
@@ -71,7 +62,6 @@ def parse_year(year_str):
     
     return np.nan
 
-# 价格区间分类函数
 def get_price_range_label(price):
     if pd.isna(price):
         return '未知'
@@ -87,7 +77,6 @@ def get_price_range_label(price):
     else:
         return '1000万以上'
 
-# 房龄区间分类函数
 def get_age_range_label(year):
     if pd.isna(year):
         return '未知'
@@ -104,37 +93,30 @@ def get_age_range_label(year):
     else:
         return '20年以上'
 
-# ===== 主程序 =====
-
 def main():
     print("=== 房源数据分析与可视化 ===\n")
     
-    # 1. 从Redis读取数据
+    # 从Redis读取数据
     new_houses = []
     esf_houses = []
     
     try:
-        # 连接Redis数据库
         r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
         print('成功连接到Redis数据库')
         
-        # 获取所有键
         keys = r.keys('*')
         print(f'Redis中共有{len(keys)}条数据')
-        
-        # 读取所有数据
+       
         for key in keys:
             try:
                 data = r.get(key)
                 if data:
                     item = json.loads(data)
                     
-                    # 验证数据的有效性
                     if 'price' not in item or 'name' not in item:
                         print(f'警告: 数据项缺少必要字段: {item}')
                         continue
-                    
-                    # 根据是否有单价字段区分新房和二手房
+
                     if 'unit_price' in item:
                         esf_houses.append(item)
                     else:
@@ -143,12 +125,10 @@ def main():
                 print(f'处理数据项时出错: {e}')
         
         print(f'处理完成，共读取{len(new_houses)}条新房数据和{len(esf_houses)}条二手房数据')
-        
-        # 如果新房数据为空，尝试其他分类方法
+
         if len(new_houses) == 0 and len(esf_houses) > 0:
             print('尝试其他分类方法...')
             
-            # 方法1: 根据建造年份重新分类 - 将近两年内建造的房子归为新房
             current_year = datetime.now().year
             reclassified_indices = []
             
@@ -160,17 +140,15 @@ def main():
                             reclassified_indices.append(i)
                     except:
                         pass
-            
-            # 将符合条件的二手房重新分类为新房
+
             for i in sorted(reclassified_indices, reverse=True):
                 new_houses.append(esf_houses[i])
                 esf_houses.pop(i)
             
             print(f'根据建造年份重新分类后: {len(new_houses)}条新房数据, {len(esf_houses)}条二手房数据')
-            
-            # 方法2: 如果仍然没有新房数据，随机选择一部分二手房作为新房
+
             if len(new_houses) == 0 and len(esf_houses) > 0:
-                sample_size = min(len(esf_houses) // 5, 1000)  # 最多1000条或20%
+                sample_size = min(len(esf_houses) // 5, 1000) 
                 sample_indices = random.sample(range(len(esf_houses)), sample_size)
                 
                 for i in sorted(sample_indices, reverse=True):
@@ -178,8 +156,7 @@ def main():
                     esf_houses.pop(i)
                 
                 print(f'随机选择后: {len(new_houses)}条新房数据, {len(esf_houses)}条二手房数据')
-            
-            # 为新房数据添加district字段，以便后续可视化
+
             for item in new_houses:
                 if 'address' in item and 'district' not in item:
                     # 从地址中提取区域信息
@@ -194,7 +171,6 @@ def main():
         print(f'从Redis读取数据时出错: {e}')
         r = None
     
-    # 如果Redis连接失败或没有数据，创建示例数据
     if r is None or (len(new_houses) == 0 and len(esf_houses) == 0):
         print('使用示例数据进行演示...')
         
@@ -246,15 +222,12 @@ def main():
         
         print(f'创建了{len(new_houses)}条示例新房数据和{len(esf_houses)}条示例二手房数据')
     
-    # 2. 创建并预处理DataFrame
     nh_df = pd.DataFrame(new_houses)
     esf_df = pd.DataFrame(esf_houses)
     
-    # 检查数据结构
     print("\n新房数据字段:", nh_df.columns.tolist())
     print("二手房数据字段:", esf_df.columns.tolist())
     
-    # 打印新房与二手房的关键字差别
     print("\n新房与二手房的关键字差别:")
     if not nh_df.empty and not esf_df.empty:
         nh_cols = set(nh_df.columns)
@@ -268,7 +241,6 @@ def main():
         print("二手房特有字段: ['floor', 'toward', 'year', 'unit_price']")
         print("共有字段: ['province', 'city', 'name', 'price', 'rooms', 'area', 'address', 'origin_url']")
     
-    # 计算用于分析的衍生列
     if not nh_df.empty:
         if 'price' in nh_df.columns:
             nh_df['price_wan'] = nh_df['price'].apply(parse_price_to_wan)
@@ -289,10 +261,8 @@ def main():
         else:
             print("警告: 二手房数据中没有'year'字段，无法计算房龄区间")
     
-    # 3. 可视化绘图
     print("\n开始生成可视化图表...")
     
-    # 创建输出目录（如果不存在）
     output_dir = 'output_charts'
     os.makedirs(output_dir, exist_ok=True)
     
@@ -429,7 +399,7 @@ def main():
         print(f"显示图表时出错: {e}")
         print("请查看保存的图片文件")
     
-    # 4. 数据统计摘要
+    # 数据统计摘要
     print("\n数据统计摘要：")
     total_houses = len(new_houses) + len(esf_houses)
     print(f"总房源数: {total_houses}套")
@@ -460,6 +430,5 @@ def main():
         print(f"最新建造: {esf_df['year_built'].max()}年")
         print(f"最早建造: {esf_df['year_built'].min()}年")
 
-# 程序入口
 if __name__ == "__main__":
     main()
