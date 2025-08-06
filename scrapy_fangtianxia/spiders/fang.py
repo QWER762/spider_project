@@ -21,7 +21,7 @@ class FangSpider(RedisSpider):
 
     def start_requests(self):
         url = "https://www.fang.com/SoufunFamily.htm"
-        cookie_str = 'global_cookie=jvkklzazfe7qwhf78pi2u8nm130mdx0y55e; __utmc=147393320; global_wapandm_cookie=1vfazln88owl4qulpr0ghswyv16mdy6n1ar; unique_wapandm_cookie=U_1vfazln88owl4qulpr0ghswyv16mdy6n1ar; engine_source_cookie=baidu; sf_source=baidu; csrfToken=U3gw4ODxiCq_zFeliKaWDwT_; token=286144979e8c4545aa429865b7d72d3e; sfut=75E3FEC247FEF2B99CC64F8807E2F444EFAB487F8C2124AEA79A0EE93DD06C19A2C3D5BCA6E639236408196B5CA65B8FF62DAF6AE0289F08377D49CD7670ADDF7ED321CD1A4610C98212CB1051093DF4BD68EB4C4395E0B495F277F803DB1946F62624774E59B691; city.sig=vUdYEwv67ddnbWyUR4KgjPsMHVMQelFBTA6tBoDDxSk; mencity=1618123899; mencity.sig=oiNdlevWc6br7JRMmXf97tKXQH5BiM3_ZWkJWIU8XIo; city=bj; g_sourcepage=; otherid=1462e4595a26c811b35108e86c7e88e6; new_loginid=130902311; login_username=fang40649352027; unique_cookie=U_fnyeroaiczozrywli6ry049z129mdy5dpne*68; __utma=147393320.354615703.1754306761.1754384678.1754398395.7; __utmz=147393320.1754398395.7.7.utmcsr=soufun.com.cn|utmccn=(referral)|utmcmd=referral|utmcct=/; __utmt_t0=1; __utmt_t1=1; __utmt_t2=1; __utmt_t3=1; __utmt_t4=1; __utmb=147393320.5.10.1754398395'
+        cookie_str = '你可以填写的cookie'
         cookie_dict = {}
         for item in cookie_str.split(';'):
             item = item.strip()  # 去除前后空格
