@@ -12,7 +12,7 @@ from scrapy_fangtianxia.items import NewHouseItem, ESFHouseItem
 
 class ScrapyFangtianxiaPipeline:
     def __init__(self):
-        # 新房CSV（字段按items定义精简）
+        # 新房CSV
         self.nh_file = open('newhouse.csv', 'w', encoding='utf-8-sig', newline='')
         self.nh_writer = csv.DictWriter(self.nh_file, fieldnames=NewHouseItem.fields.keys())
         self.nh_writer.writeheader()
@@ -23,7 +23,6 @@ class ScrapyFangtianxiaPipeline:
         self.esf_writer.writeheader()
 
     def process_item(self, item, spider):
-        # 自动匹配item类型写入对应文件
         if isinstance(item, NewHouseItem):
             self.nh_writer.writerow(ItemAdapter(item).asdict())
         elif isinstance(item, ESFHouseItem):
@@ -33,6 +32,7 @@ class ScrapyFangtianxiaPipeline:
     def close_spider(self, spider):
         self.nh_file.close()
         self.esf_file.close()
+
     # def __init__(self):
     #     self.newhouse_fp = open('newhouse.json','w',encoding='utf-8')
     #     self.esf_fp = open('esf.json', 'w', encoding='utf-8')
